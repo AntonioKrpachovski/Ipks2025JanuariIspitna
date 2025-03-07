@@ -1,0 +1,245 @@
+<!--
+задачава беше 3 div-а, два поставени горе со еднаква должина и ширина, и еден под нив со ширина колку другите 2 заедно.првиот div има порамнета
+слика во средина, и под неа копче "play game", при клик на копчето повеке пати се менуваат елементите пред да се одбере победник. По одбирање
+на победник се појавува "победникот е елемент *број на елементот*". вториот div има копче "show statistics", при клик се прикажуваат
+два графа, во едниот е прикажано кој елемент колку пари вложил, а во другиот кој елемент победил највеќе пати (играта во првиот div може да
+биде пуштена било колку пати). во третиот див се направени картички со играчите чии информации се превземени од json променлив. Во картичките
+треба да се прикаже нивниот Name, Username, Element i Amount, доколку некој играч во Username има 5 или @ неговата картичка не се прикажува.
+При победа на некој елемент треба да се додаде + во картиките на сите играчи кој се опкладиле во тој елемент. При клик на "show statistics"
+исчезнуваат сите играчи што немаат победено (opacity=0 тип исчезнување, не hide() ili .remove)
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        #main {
+            width: fit-content;
+        }
+
+        #div1 {
+            vertical-align: top;
+            border: solid black 1px;
+            width: 600px;
+            height: 400px;
+            display: inline-flex;
+            flex-direction: column;
+            /*justify-content: center;*/
+            align-items: center;
+            gap: 5px;
+        }
+
+        #div2 {
+            vertical-align: top;
+            border: solid black 1px;
+            width: 600px;
+            height: 400px;
+            display: inline-flex;
+            flex-direction: column;
+            /*justify-content: center;*/
+            align-items: center;
+            gap: 5px;
+        }
+
+        #div3 {
+            flex-direction: column;
+            width: 1202px;
+            height: 400px;
+            border: solid black 1px;
+            vertical-align: top;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+            margin-top: 3px;
+            padding-left: 2px;
+            padding-right: 2px;
+        }
+
+        #karti {
+            width: 1202px;
+            height: 400px;
+            vertical-align: top;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+            margin-top: 3px;
+            padding-left: 2px;
+            padding-right: 2px;
+        }
+
+        #image {
+            border: solid black 1px;
+            width: 150px;
+            height: 150px;
+            background: linear-gradient(blue, green, red, white);
+        }
+
+        .cards {
+            border: solid black 1px;
+            width: 100px;
+            height: 300px;
+            padding-left: 20px;
+        }
+
+        #image img {
+            height: 100%;
+            width: 100%;
+        }
+        #graphContainer{
+            width: 100%;
+            height: 80%;
+            display: flex;
+            align-content: space-between;
+        }
+        #W{
+            height: 100%;
+            width: 100%;
+        }
+        #pay2win{
+            height: 100%;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div id="main">
+    <div id="div1">
+        <h3>Game</h3>
+        <div id="image"></div>
+        <button onclick="playGame()">Play game</button>
+        <p id="tekst"></p>
+    </div>
+    <div id="div2">
+        <h3>Statistics</h3>
+        <button onclick="showStatistics()">Show statistics</button>
+        <div id="graphContainer">
+            <div id="W"></div>
+            <div id="pay2win"></div>
+        </div>
+    </div>
+    <div id="div3">
+        <h3>Players</h3>
+        <div id="karti"></div>
+    </div>
+</div>
+<script>
+    var jason = [{
+        "Player": {"Name": "name", "Username": "userName"},
+        "Amount": "700",
+        "Element": "1"
+    }, {
+        "Player": {"Name": "name", "Username": "user5Name"},
+        "Amount": "300",
+        "Element": "1"
+    }, {
+        "Player": {"Name": "name", "Username": "@userName"},
+        "Amount": "200",
+        "Element": "1"
+    }, {
+        "Player": {"Name": "name", "Username": "userName"},
+        "Amount": "900",
+        "Element": "3"
+    }, {
+        "Player": {"Name": "name", "Username": "userName"},
+        "Amount": "700",
+        "Element": "4"
+    }, {
+        "Player": {"Name": "name", "Username": "userName"},
+        "Amount": "100",
+        "Element": "2"
+    }, {
+        "Player": {"Name": "name", "Username": "userName"},
+        "Amount": "200",
+        "Element": "2"
+    }, {"Player": {"Name": "name", "Username": "userName"}, "Amount": "400", "Element": "4"}]
+    /*console.log(jason)*/
+
+    let pari = [0, 0, 0, 0]
+
+    function populate() {
+        let container = document.getElementById("karti")
+        for (let i = 0; i < jason.length; i++) {
+            let ime = jason[i].Player.Name
+            let userIme = jason[i].Player.Username
+            let amount = jason[i].Amount
+            let element = jason[i].Element
+            if (userIme.indexOf("5") !== -1) {
+                continue;
+            }
+            if (userIme.indexOf("@") !== -1) {
+                continue;
+            }
+            container.innerHTML += "<div class='cards' Element='" + element + "'><p>Name: " + ime + "</p><p>Username: " + userIme + "</p><p>Amount: " + amount + "</p><p>Element: " + element + "</p><p class='wins'></p></div>"
+            pari[parseInt(element) - 1] += parseInt(amount);
+        }
+    }
+
+    populate()
+
+    let counter = 0;
+    let WCounter = [0, 0, 0, 0]
+
+    function playGame() {
+        let slika = document.getElementById("image")
+        slika.style.background = "white"
+        let element = Math.floor((Math.random() * 4) + 1)
+        slika.innerHTML = "<img id='ikona' src='images/" + element + ".png'/>"
+        if (counter < 8) {
+            counter++
+            setTimeout(playGame, 150);
+        } else {
+            counter = 0;
+            WCounter[element - 1] += 1;
+            let karti = document.getElementsByClassName("cards")
+            for (let i = 0; i < karti.length; i++) {
+                if (parseInt(karti[i].getAttribute("Element")) === element) {
+                    document.getElementsByClassName("wins")[i].innerHTML += "+"
+                }
+            }
+            document.getElementById("tekst").innerHTML = "The winning element is " + element;
+        }
+    }
+
+    let nagore = 0
+    let initOpacity = 100;
+    function fade() {
+        if (initOpacity > 0) {
+            /*console.log("povikana e")*/
+            let karti = document.getElementsByClassName("cards")
+            nagore -= 2
+            initOpacity -= 5
+            for (let i = 0; i < karti.length; i++) {
+                if (document.getElementsByClassName("wins")[i].innerHTML === "") {
+                    document.getElementsByClassName("cards")[i].style.opacity = initOpacity + "%";
+                    document.getElementsByClassName("cards")[i].style.marginTop = nagore + "px";
+                }
+            }
+            setTimeout(fade, 30)
+        }
+    }
+
+    function showStatistics() {
+        fade()
+        var trace1 = {
+            x: ['1', '2', '3', '4'],
+            y: WCounter,
+            name: 'Amount of wins',
+            type: 'bar'
+        };
+        var trace2 = {
+            x: ['1', '2', '3', '4'],
+            y: pari,
+            name: 'Amount of money',
+            type: 'bar'
+        };
+
+        Plotly.newPlot('W', [trace1]);
+        Plotly.newPlot('pay2win', [trace2]);
+    }
+</script>
+</body>
+</html>
